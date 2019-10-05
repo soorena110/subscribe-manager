@@ -1,0 +1,32 @@
+{
+  "name": "subscribe-manager",
+  "version": "1.1.1",
+  "description": "A library to manage subscription(s) and unsubscription(s). ;)",
+  "main": "./lib/index.js",
+  "repository": "https://github.com/soorena110/subscribe-manager.git",
+  "typings": "./lib/index.d.ts",
+  "scripts": {
+    "clean": "rimraf dist",
+    "start": "webpack-dev-server -d --env.dev",
+    "build": "npm run clean & webpack -p --env.prod",
+    "postbuild": "tsc --emitDeclarationOnly --declaration",
+    "deploy": "npm run build & npm run build:dev & npm run postbuild & npm publish --access=public"
+  },
+  "keywords": [
+    "subscribe-manager",
+    "subscribe",
+    "unsubscribe",
+    "subscribe listener"
+  ],
+  "author": "MohammadReza Azarang",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^3.4.5",
+    "awesome-typescript-loader": "^5.2.1",
+    "rimraf": "^2.6.3",
+    "uglifyjs-webpack-plugin": "^2.1.2",
+    "webpack": "^4.30.0",
+    "webpack-cli": "^3.3.1",
+    "webpack-dev-server": "^3.8.2"
+  }
+}
