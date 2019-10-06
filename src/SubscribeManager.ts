@@ -1,13 +1,18 @@
-import {SubscribeManagerChangeEventArgs, SubscribeManagerEventHandlerFunction} from "./models";
+import {
+    SubscribedItem,
+    SubscribeManagerChangeEventArgs,
+    SubscribeManagerEventHandlerFunction,
+    SubscribeManagerEventType
+} from "./models";
 import {EventManager} from "./EventHandler";
 
 interface SubscribeOptions {
-    layer: string,
-    shouldTriggerListeners: boolean
+    layer?: string,
+    preventTriggerListeners?: boolean
 }
 
 export default class SubscribeManager {
-    private _subscribedLayers: { [layer: string]: { [entityType: string]: string[] } } = {};
+    private _subscribedLayers: { [layer: string]: { [entityType: string]: SubscribedItem[] } } = {};
     private _eventHandler = new EventManager();
 
     private _getCurrentSubscribedToEntityInLayerRef(layer: string, entity: string) {
@@ -29,7 +34,11 @@ export default class SubscribeManager {
         return shouldBeSubscribed;
     }
 
-    subscribe(entity: string, subscribingIds: string[], {layer = 'default', shouldTriggerListeners = true}: SubscribeOptions) {
+    subscribe(entity: string, subscribingIds: SubscribedItem | SubscribedItem[], e: SubscribeOptions = {}, isBasedOnResubscribe = false) {
+        if (!Array.isArray(subscribingIds))
+            subscribingIds = [subscribingIds];
+
+        const layer = e.layer || 'default';
         const subs = this._getCurrentSubscribedToEntityInLayerRef(layer, entity);
 
         const newIds = subscribingIds.filter(id => subs.indexOf(id) == -1);
@@ -37,45 +46,67 @@ export default class SubscribeManager {
 
         const addingIdsNotExistingInOtherComponents = newIds.filter(id => this._checkIdExistsInOtherLayers(id, layer, entity));
 
-        if (shouldTriggerListeners)
-            this.raiseEvents(layer, {
+        if (!e.preventTriggerListeners)
+            this.raiseEvents({
                 subscribed: addingIdsNotExistingInOtherComponents,
-                unsubscribed: []
+                unsubscribed: [],
+                type: 'subscribe',
+                trigger: {
+                    layer: layer,
+                    action: isBasedOnResubscribe ? 'resubscribe' : 'subscribe'
+                }
             });
         return {addingIdsNotExistingInOtherComponents};
     }
 
-    unsubscribe(entity: string, unsubscribingIds: string[], {layer = 'default', shouldTriggerListeners = true}: SubscribeOptions) {
+    unsubscribe(entity: string, unsubscribingIds: SubscribedItem[], e: SubscribeOptions = {}, isBasedOnResubscribe = false) {
+        if (!Array.isArray(unsubscribingIds))
+            unsubscribingIds = [unsubscribingIds];
+
+        const layer = e.layer || 'default';
         const subs = this._getCurrentSubscribedToEntityInLayerRef(layer, entity);
 
         const removingIds = unsubscribingIds.filter(id => subs.indexOf(id) != -1);
         removingIds.forEach(id => subs.splice(subs.indexOf(id), 1));
 
-        const removingIdsNotExistingInOtherComponents = removingIds.filter(id => this._checkIdExistsInOtherLayers(id, layer, entity))
-        if (shouldTriggerListeners)
-            this.raiseEvents(layer, {
+        const removingIdsNotExistingInOtherComponents = removingIds.filter(id => this._checkIdExistsInOtherLayers(id, layer, entity));
+
+        if (!e.preventTriggerListeners)
+            this.raiseEvents({
                 subscribed: [],
-                unsubscribed: removingIdsNotExistingInOtherComponents
+                unsubscribed: removingIdsNotExistingInOtherComponents,
+                type: 'unsubscribe',
+                trigger: {
+                    layer: layer,
+                    action: isBasedOnResubscribe ? 'resubscribe' : 'unsubscribe'
+                }
             });
         return {removingIdsNotExistingInOtherComponents};
     }
 
-    resubscribe(entity: string, resubscribingIds: string[], {layer = 'default', shouldTriggerListeners = true}: SubscribeOptions) {
+    resubscribe(entity: string, resubscribingIds: SubscribedItem[], e: SubscribeOptions = {}) {
+        if (!Array.isArray(resubscribingIds))
+            resubscribingIds = [resubscribingIds];
+
+        const layer = e.layer || 'default';
         const lastSubscribedIsins = this._getCurrentSubscribedToEntityInLayerRef(layer, entity);
         const newSubscribingIsins = resubscribingIds.filter(id => lastSubscribedIsins.indexOf(id) == -1);
         const removingSubscribingIsins = lastSubscribedIsins.filter(id => resubscribingIds.indexOf(id) == -1);
 
-        const {removingIdsNotExistingInOtherComponents} = this.unsubscribe(entity, removingSubscribingIsins, {
-            layer, shouldTriggerListeners: false
-        });
-        const {addingIdsNotExistingInOtherComponents} = this.subscribe(entity, newSubscribingIsins, {
-            layer, shouldTriggerListeners: false
-        });
+        const {removingIdsNotExistingInOtherComponents} = this.unsubscribe(entity, removingSubscribingIsins,
+            {...e, preventTriggerListeners: false}, true);
+        const {addingIdsNotExistingInOtherComponents} = this.subscribe(entity, newSubscribingIsins,
+            {...e, preventTriggerListeners: false}, true);
 
-        if (shouldTriggerListeners)
-            this.raiseEvents(layer, {
+        if (!e.preventTriggerListeners)
+            this.raiseEvents({
                 subscribed: addingIdsNotExistingInOtherComponents,
-                unsubscribed: removingIdsNotExistingInOtherComponents
+                unsubscribed: removingIdsNotExistingInOtherComponents,
+                type: 'resubscribe',
+                trigger: {
+                    layer: layer,
+                    action: 'resubscribe'
+                }
             });
         return {addingIdsNotExistingInOtherComponents, removingIdsNotExistingInOtherComponents}
     }
@@ -101,16 +132,13 @@ export default class SubscribeManager {
         return Object.keys(subscribeds).map(entity => ({entity, ids: subscribeds[entity]}));
     }
 
-    addEventListener = (layer: string, handler: SubscribeManagerEventHandlerFunction) =>
-        this._eventHandler.addEventListener(layer, handler);
+    addEventListener = (eventType: SubscribeManagerEventType, handler: SubscribeManagerEventHandlerFunction) =>
+        this._eventHandler.addEventListener(eventType, handler);
 
-    removeEventListener = (layer: string, handler: SubscribeManagerEventHandlerFunction) =>
-        this._eventHandler.removeEventListener(layer, handler);
+    removeEventListener = (eventType: SubscribeManagerEventType, handler: SubscribeManagerEventHandlerFunction) =>
+        this._eventHandler.removeEventListener(eventType, handler);
 
-    removeAllListener = (layer: string) =>
-        this._eventHandler.removeAllEventListeners(layer);
+    removeAllListener = (eventType: SubscribeManagerEventType) => this._eventHandler.removeAllEventListeners(eventType);
 
-    raiseEvents(layer = 'default', e: SubscribeManagerChangeEventArgs) {
-        this._eventHandler.trigger(layer, e);
-    }
+    raiseEvents = (e: SubscribeManagerChangeEventArgs) => this._eventHandler.trigger(e.type, e);
 }
