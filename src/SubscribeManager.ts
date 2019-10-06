@@ -48,6 +48,7 @@ export default class SubscribeManager {
 
         if (!e.preventTriggerListeners)
             this.raiseEvents({
+                entity,
                 subscribed: addingIdsNotExistingInOtherComponents,
                 unsubscribed: [],
                 type: 'subscribe',
@@ -73,6 +74,7 @@ export default class SubscribeManager {
 
         if (!e.preventTriggerListeners)
             this.raiseEvents({
+                entity,
                 subscribed: [],
                 unsubscribed: removingIdsNotExistingInOtherComponents,
                 type: 'unsubscribe',
@@ -100,6 +102,7 @@ export default class SubscribeManager {
 
         if (!e.preventTriggerListeners)
             this.raiseEvents({
+                entity,
                 subscribed: addingIdsNotExistingInOtherComponents,
                 unsubscribed: removingIdsNotExistingInOtherComponents,
                 type: 'resubscribe',

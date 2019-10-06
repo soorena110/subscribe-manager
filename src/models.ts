@@ -2,6 +2,7 @@ export type SubscribedItem = string;
 export type SubscribeManagerEventType = 'subscribe' | 'unsubscribe' | 'resubscribe'
 
 export interface SubscribeManagerChangeEventArgs {
+    entity: string,
     subscribed: SubscribedItem[],
     unsubscribed: SubscribedItem[],
     type: SubscribeManagerEventType,
