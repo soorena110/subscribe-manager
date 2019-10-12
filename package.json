@@ -16,7 +16,8 @@
     "subscribe-manager",
     "subscribe",
     "unsubscribe",
-    "subscribe listener"
+    "subscribe listener",
+    "resubscribe"
   ],
   "author": "MohammadReza Azarang",
   "license": "ISC",
