@@ -34,7 +34,7 @@ export default class SubscribeManager {
         return shouldBeSubscribed;
     }
 
-    subscribe(entity: string, subscribingIds: SubscribedItem | SubscribedItem[], e: SubscribeOptions = {}, isBasedOnResubscribe = false) {
+    subscribe(entity: string, subscribingIds: SubscribedItem | SubscribedItem[] = '*', e: SubscribeOptions = {}, isBasedOnResubscribe = false) {
         if (!Array.isArray(subscribingIds))
             subscribingIds = [subscribingIds];
 
@@ -60,7 +60,7 @@ export default class SubscribeManager {
         return {addingIdsNotExistingInOtherComponents};
     }
 
-    unsubscribe(entity: string, unsubscribingIds: SubscribedItem[], e: SubscribeOptions = {}, isBasedOnResubscribe = false) {
+    unsubscribe(entity: string, unsubscribingIds: SubscribedItem | SubscribedItem[] = '*', e: SubscribeOptions = {}, isBasedOnResubscribe = false) {
         if (!Array.isArray(unsubscribingIds))
             unsubscribingIds = [unsubscribingIds];
 
@@ -86,7 +86,7 @@ export default class SubscribeManager {
         return {removingIdsNotExistingInOtherComponents};
     }
 
-    resubscribe(entity: string, resubscribingIds: SubscribedItem[], e: SubscribeOptions = {}) {
+    resubscribe(entity: string, resubscribingIds: SubscribedItem | SubscribedItem[] = '*', e: SubscribeOptions = {}) {
         if (!Array.isArray(resubscribingIds))
             resubscribingIds = [resubscribingIds];
 

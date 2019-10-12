@@ -1,6 +1,6 @@
 {
   "name": "subscribe-manager",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "A library to manage subscription(s) and unsubscription(s). ;)",
   "main": "./lib/index.js",
   "repository": "https://github.com/soorena110/subscribe-manager.git",
